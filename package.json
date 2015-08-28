@@ -1,0 +1,22 @@
+{
+  "author": "Sebastien Requiem <sebastien.requiem@gmail.com>",
+  "name": "node-gpgme",
+  "description": "GpgMe bindings",
+  "version": "0.0.1",
+  "keywords": ["node-gyp", "gpg", "gpgme"],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:kiddouk/node-gpgme.git"
+  },
+  "scripts": {
+    "install": "node-gyp configure; node-gyp build"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "dependencies": {
+    "node-gyp": ">= 0.9.6"
+  },
+  "devDependencies": {
+  }
+}
