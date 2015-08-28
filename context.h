@@ -13,9 +13,15 @@ class ContextWrapper : public node::ObjectWrap {
   explicit ContextWrapper();
   ~ContextWrapper();
 
+  char* getVersion();
+  int addKey(char *key);
+
+
+  static v8::Persistent<v8::Function> constructor;
   static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
   static void toString(const v8::FunctionCallbackInfo<v8::Value>& args);
-  static v8::Persistent<v8::Function> constructor;
+
+  static void addKey(const v8::FunctionCallbackInfo<v8::Value>& args);
   
  public:
   static void Init(v8::Handle<v8::Object> exports);

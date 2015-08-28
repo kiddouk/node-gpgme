@@ -66,7 +66,7 @@ void ContextWrapper::Init(Handle<Object> exports) {
 }
 
 
-void ContextWrapper::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void ContextWrapper::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   
   HandleScope scope(isolate);
@@ -83,17 +83,26 @@ void ContextWrapper::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
   
 }
 
-void ContextWrapper::toString(const v8::FunctionCallbackInfo<v8::Value>& args) {
-  Isolate* isolate = Isolate::GetCurrent();
-  HandleScope scope(isolate);
-  
-  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(args.This());
-  
+
+char* ContextWrapper::getVersion() {
   gpgme_error_t err;
   gpgme_engine_info_t enginfo;
 
   err = gpgme_get_engine_info(&enginfo);
-  if(err != GPG_ERR_NO_ERROR) return;
-  
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, enginfo->version));
+  if(err != GPG_ERR_NO_ERROR) return NULL;
+
+  return enginfo->version;
 }
+
+void ContextWrapper::toString(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = Isolate::GetCurrent();
+  HandleScope scope(isolate);
+  
+  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(args.This());
+
+  char *version = context->getVersion();
+  if (version == NULL) return;
+  
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, version));
+}
+
