@@ -16,15 +16,16 @@ class ContextWrapper : public ObjectWrap {
   ~ContextWrapper();
 
   char* getVersion();
-  bool addKey(std::string key, std::string& fingerprint);
+  bool addKey(char *key, int length, std::string& fingerprint);
+  static NAN_METHOD(New);
+  static NAN_METHOD(toString); 
+  static NAN_METHOD(importKey); 
 
   
  public:
   static Persistent<v8::Function> constructor;
 
   static NAN_MODULE_INIT(Init);
-  static NAN_METHOD(New);
-  static NAN_METHOD(toString); 
 };
 
 #endif
