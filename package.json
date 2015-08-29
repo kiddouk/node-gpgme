@@ -3,7 +3,11 @@
   "name": "node-gpgme",
   "description": "GpgMe bindings",
   "version": "0.0.1",
-  "keywords": ["node-gyp", "gpg", "gpgme"],
+  "keywords": [
+    "node-gyp",
+    "gpg",
+    "gpgme"
+  ],
   "repository": {
     "type": "git",
     "url": "git@github.com:kiddouk/node-gpgme.git"
@@ -18,5 +22,6 @@
     "node-gyp": ">= 0.9.6"
   },
   "devDependencies": {
+    "nan": "^2.0.8"
   }
 }

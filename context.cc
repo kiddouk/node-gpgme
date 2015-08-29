@@ -1,11 +1,9 @@
 #include <locale.h>  /* locale support    */
-#include <gpgme.h>
 #include "context.h"
-
 
 using namespace v8;
 
-Persistent<Function> ContextWrapper::constructor;
+Nan::Persistent<Function> ContextWrapper::constructor;
 
 ContextWrapper::ContextWrapper() : _context(NULL) {
 
@@ -49,40 +47,30 @@ ContextWrapper::~ContextWrapper() {
 }
 
 
-void ContextWrapper::Init(Handle<Object> exports) {
-
-  Isolate* isolate = Isolate::GetCurrent();
-  
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-  
-  tpl->SetClassName(String::NewFromUtf8(isolate, "GpgMeContext"));
+NAN_MODULE_INIT(ContextWrapper::Init) {
+  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("GpgMeContext").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-  NODE_SET_PROTOTYPE_METHOD(tpl, "toString", toString);
+  SetPrototypeMethod(tpl, "toString", toString);
 
-  constructor.Reset(isolate, tpl->GetFunction());
-  exports->Set(String::NewFromUtf8(isolate, "GpgMeContext"),
-               tpl->GetFunction());
+  constructor.Reset(tpl->GetFunction());
+  Nan::Set(target, Nan::New("GpgMeContext").ToLocalChecked(), tpl->GetFunction());
+
 }
 
-
-void ContextWrapper::New(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = Isolate::GetCurrent();
-  
-  HandleScope scope(isolate);
-  if (args.IsConstructCall()) {
+NAN_METHOD(ContextWrapper::New) {
+  if (info.IsConstructCall()) {
     // Invoked as constructor: `new MyObject(...)`
     ContextWrapper *contextWrapper = new ContextWrapper();
-    contextWrapper->Wrap(args.This());
-    args.GetReturnValue().Set(args.This());
+    contextWrapper->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   } else {
     const int argc = 0;
-    Local<Function> cons = Local<Function>::New(isolate, constructor);
-    args.GetReturnValue().Set(cons->NewInstance(argc, NULL));
+    Local<Function> cons = Nan::New(constructor);
+    info.GetReturnValue().Set(cons->NewInstance(argc, NULL));
   }
-  
 }
-
 
 char* ContextWrapper::getVersion() {
   gpgme_error_t err;
@@ -94,15 +82,28 @@ char* ContextWrapper::getVersion() {
   return enginfo->version;
 }
 
-void ContextWrapper::toString(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = Isolate::GetCurrent();
-  HandleScope scope(isolate);
-  
-  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(args.This());
+
+NAN_METHOD(ContextWrapper::toString) {
+  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
 
   char *version = context->getVersion();
   if (version == NULL) return;
-  
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, version));
+
+  info.GetReturnValue().Set(Nan::New<String>(version).ToLocalChecked());
 }
 
+// bool addKey(std::string key, std::string& fingerprint) {  
+//   gpgme_data_t gpgme_key;
+//   gpgme_error_t err;
+  
+//   gpgme_data_new(&gpgme_key);
+//   err = gpgme_data_new_from_mem(&key, key.c_str(), key.length(), 1);
+//   if (err == GPG_ERR_INV_VALUE) return false;
+
+//   err = gpgme_op_import(_context, gpgme_key);
+//   if(err != GPG_ERR_NO_ERROR) return false;
+
+//   gpgme_import_result_t result = gpgme_op_import_result(_context);
+//   fingerprint.assign(result->imports->fpr);
+//   return true;
+// }

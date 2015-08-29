@@ -1,11 +1,13 @@
 #ifndef GPGMECONTEXT_H
 #define GPGMECONTEXT_H
 
-#include <node.h>
-#include <node_object_wrap.h>
+#include <string>
+#include <nan.h>
 #include <gpgme.h>
 
-class ContextWrapper : public node::ObjectWrap {
+using namespace Nan;
+
+class ContextWrapper : public ObjectWrap {
 
  private:
   gpgme_ctx_t _context;
@@ -14,17 +16,15 @@ class ContextWrapper : public node::ObjectWrap {
   ~ContextWrapper();
 
   char* getVersion();
-  int addKey(char *key);
+  bool addKey(std::string key, std::string& fingerprint);
 
-
-  static v8::Persistent<v8::Function> constructor;
-  static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
-  static void toString(const v8::FunctionCallbackInfo<v8::Value>& args);
-
-  static void addKey(const v8::FunctionCallbackInfo<v8::Value>& args);
   
  public:
-  static void Init(v8::Handle<v8::Object> exports);
+  static Persistent<v8::Function> constructor;
+
+  static NAN_MODULE_INIT(Init);
+  static NAN_METHOD(New);
+  static NAN_METHOD(toString); 
 };
 
 #endif

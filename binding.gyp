@@ -6,6 +6,7 @@
                          "context.cc",
                          ],
             "include_dirs": [
+                "<!(node -e \"require('nan')\")",
                 "<!@(gpgme-config --cflags | sed 's/-I//g')"
             ],
             "link_settings": {

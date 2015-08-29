@@ -4,8 +4,4 @@
 
 using namespace v8;
 
-void InitAll(Handle<Object> exports) {
-  ContextWrapper::Init(exports);
-}
-
-NODE_MODULE(gpgme, InitAll)
+NODE_MODULE(target, ContextWrapper::Init);
