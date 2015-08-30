@@ -201,9 +201,9 @@ NAN_METHOD(ContextWrapper::listKeys) {
     v8Keys->Set(i, v8Key);
 
     v8Key->Set(Nan::New("secret").ToLocalChecked(), (*iterator)->secret ? Nan::True() : Nan::False());
-    v8Keys->Set(i, v8Key);
-
     
+    v8Keys->Set(i, v8Key);
+    gpgme_key_unref((*iterator));
   }
   
   info.GetReturnValue().Set(v8Keys);
