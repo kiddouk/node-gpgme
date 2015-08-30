@@ -101,6 +101,7 @@ NAN_MODULE_INIT(ContextWrapper::Init) {
 
   SetPrototypeMethod(tpl, "toString", toString);
   SetPrototypeMethod(tpl, "importKey", importKey);
+  SetPrototypeMethod(tpl, "listKeys", listKeys);
 
   constructor.Reset(tpl->GetFunction());
   Nan::Set(target, Nan::New("GpgMeContext").ToLocalChecked(), tpl->GetFunction());
@@ -139,8 +140,6 @@ NAN_METHOD(ContextWrapper::importKey) {
   if (info.Length() != 1) Nan::ThrowError("Missing key argument");
   if (!info[0]->IsString()) Nan::ThrowError("Arg1 should be a string");
 
-
-
   std::string fingerprint;
   Local<v8::String> key = Nan::To<v8::String>(info[0]).ToLocalChecked();
   int byte_written;
@@ -158,6 +157,56 @@ NAN_METHOD(ContextWrapper::importKey) {
   }
 
   info.GetReturnValue().Set(Nan::New<v8::String>(fingerprint).ToLocalChecked());
+}
+
+NAN_METHOD(ContextWrapper::listKeys) {
+
+  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
+
+  std::list<gpgme_key_t> keys;
+  bool res = context->getKeys(&keys);
+
+  if (res == false) {
+    Nan::ThrowError("Internal error when retrieving the keys");
+    return;
+  }
+  
+  Local<Array> v8Keys= Nan::New<Array>();
+  std::list<gpgme_key_t>::const_iterator iterator;
+  int i;
+  for (i = 0, iterator = keys.begin(); iterator != keys.end(); ++iterator, ++i) {
+    Local<Object> v8Key = Nan::New<Object>();
+
+    if ((*iterator)->subkeys->fpr) {
+      v8Key->Set(Nan::New("fingerprint").ToLocalChecked(), Nan::New<String>( (*iterator)->subkeys->fpr).ToLocalChecked());
+    }
+
+    if ((*iterator)->uids->email) {
+      v8Key->Set(Nan::New("email").ToLocalChecked(), Nan::New<String>( (*iterator)->uids->email).ToLocalChecked());
+    }
+
+    if ((*iterator)->uids->name) {
+      v8Key->Set(Nan::New("name").ToLocalChecked(), Nan::New<String>( (*iterator)->uids->name).ToLocalChecked());
+    }
+
+    v8Key->Set(Nan::New("revoked").ToLocalChecked(), (*iterator)->revoked ? Nan::True() : Nan::False());
+
+    v8Key->Set(Nan::New("expired").ToLocalChecked(), (*iterator)->revoked ? Nan::True() : Nan::False());
+
+    v8Key->Set(Nan::New("disabled").ToLocalChecked(), (*iterator)->disabled ? Nan::True() : Nan::False());
+
+    v8Key->Set(Nan::New("invalid").ToLocalChecked(), (*iterator)->invalid ? Nan::True() : Nan::False());
+
+    v8Key->Set(Nan::New("can_encrypt").ToLocalChecked(), (*iterator)->can_encrypt ? Nan::True() : Nan::False());
+    v8Keys->Set(i, v8Key);
+
+    v8Key->Set(Nan::New("secret").ToLocalChecked(), (*iterator)->secret ? Nan::True() : Nan::False());
+    v8Keys->Set(i, v8Key);
+
+    
+  }
+  
+  info.GetReturnValue().Set(v8Keys);
 }
 
 char* ContextWrapper::getVersion() {
@@ -188,5 +237,27 @@ bool ContextWrapper::addKey(char *key, int length,  std::string& fingerprint) {
   if (result->considered != 1) return false;
 
   fingerprint.assign(result->imports->fpr);
+  return true;
+}
+
+
+bool ContextWrapper::getKeys(std::list<gpgme_key_t> *keys) {
+  gpgme_error_t err;
+  gpgme_key_t key = NULL;
+
+  /* List all keys, no pattern, not only secret keys */
+  err = gpgme_op_keylist_start(_context, NULL, 0);
+  if (err != GPG_ERR_NO_ERROR) return false;
+
+  do {
+    err = gpgme_op_keylist_next(_context, &key);
+    if (err) break;
+    keys->insert(keys->end(), key);    
+  } while (err == GPG_ERR_NO_ERROR);
+  if (gpg_err_code (err) != GPG_ERR_EOF) {
+    std::cout << "FAIL\n";
+    // TODO: release objects
+    return false;
+  }
   return true;
 }
