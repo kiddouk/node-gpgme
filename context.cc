@@ -64,27 +64,18 @@ ContextWrapper::ContextWrapper(Local<Object> conf) : _context(NULL) {
   }
 
   /* Allocated memory to get the value of the path option */
-  int nbytesWritten;
-  char *keyring_path_buffer;
-  keyring_path_buffer = (char *) malloc((keyring_path->Utf8Length() + 1) * sizeof(char));
-  if (keyring_path_buffer == NULL) {
-    Nan::ThrowError("Memory allocation failed");
-    return;
-  }
 
-  // TODO: Make this a complete do...while if the copy gets interrupted.
-  keyring_path->WriteUtf8(keyring_path_buffer, keyring_path->Utf8Length(), &nbytesWritten, 0);
+  char *keyring_path_buffer = StringToCharPointer(keyring_path);
 
   err = gpgme_ctx_set_engine_info (_context, GPGME_PROTOCOL_OpenPGP,
                                    enginfo->file_name,
                                    keyring_path_buffer);
+  free(keyring_path_buffer);
   if (err != GPG_ERR_NO_ERROR) {
     Nan::ThrowError("Cannot set engine options, are you sure about the path for the keyring ?");
     return;
   }
-
   gpgme_set_armor(_context, armored);
-  free(keyring_path_buffer);
 }
 
 ContextWrapper::~ContextWrapper() {
@@ -102,6 +93,7 @@ NAN_MODULE_INIT(ContextWrapper::Init) {
   SetPrototypeMethod(tpl, "toString", toString);
   SetPrototypeMethod(tpl, "importKey", importKey);
   SetPrototypeMethod(tpl, "listKeys", listKeys);
+  SetPrototypeMethod(tpl, "cipher", cipher);  
 
   constructor.Reset(tpl->GetFunction());
   Nan::Set(target, Nan::New("GpgMeContext").ToLocalChecked(), tpl->GetFunction());
@@ -142,15 +134,10 @@ NAN_METHOD(ContextWrapper::importKey) {
 
   std::string fingerprint;
   Local<v8::String> key = Nan::To<v8::String>(info[0]).ToLocalChecked();
-  int byte_written;
-  int encoded_key_length = key->Utf8Length() + 1;
-  
-  char *key_buffer = (char *) malloc(encoded_key_length * sizeof(char));
-  if (key_buffer == NULL) Nan::ThrowError("Not enough memory");
-  key->WriteUtf8(key_buffer, encoded_key_length, &byte_written, 0);
-  
-  bool res = context->addKey(key_buffer, encoded_key_length, fingerprint);
 
+  char *key_buffer = context->StringToCharPointer(key);
+  bool res = context->addKey(key_buffer, key->Length(), fingerprint);
+  free(key_buffer);
   if (res == false) {
     info.GetReturnValue().Set(false);
     return;
@@ -159,8 +146,32 @@ NAN_METHOD(ContextWrapper::importKey) {
   info.GetReturnValue().Set(Nan::New<v8::String>(fingerprint).ToLocalChecked());
 }
 
-NAN_METHOD(ContextWrapper::listKeys) {
 
+NAN_METHOD(ContextWrapper::cipher) {
+  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
+  //arg0 should be the finger print of the key to use
+  //arg1 should be the payload to cipher
+
+  if (info.Length() != 2) Nan::ThrowError("Missing argument (fingerprint, message)");
+  if (!info[0]->IsString()) Nan::ThrowError("fingerprint should be a string");
+  if (!info[1]->IsString()) Nan::ThrowError("message should be a string");
+
+  Local<String> fingerprint = Nan::To<String>(info[0]).ToLocalChecked();
+  Local<String> message = Nan::To<String>(info[1]).ToLocalChecked();
+
+  char *data = context->cipherPayload(fingerprint, message);
+  if (data == NULL) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
+
+  info.GetReturnValue().Set(Nan::New<v8::String>(data).ToLocalChecked());
+  gpgme_free(data);
+}
+
+
+
+NAN_METHOD(ContextWrapper::listKeys) {
   ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
 
   std::list<gpgme_key_t> keys;
@@ -260,4 +271,66 @@ bool ContextWrapper::getKeys(std::list<gpgme_key_t> *keys) {
     return false;
   }
   return true;
+}
+
+char *ContextWrapper::cipherPayload(Local<String> fpr, Local<String> msg) {
+
+  gpgme_error_t err;
+  gpgme_key_t recp[2] = { NULL, NULL };
+  char *fingerprint = StringToCharPointer(fpr);
+  char *message = StringToCharPointer(msg);
+
+  err = gpgme_get_key(_context, fingerprint, &recp[0], 0);
+  if(err != GPG_ERR_NO_ERROR) {
+    free(fingerprint);
+    free(message);
+    return NULL;
+  }
+
+  gpgme_data_t message_data;
+  err = gpgme_data_new_from_mem(&message_data, message, msg->Length(), 0);
+  if(err != GPG_ERR_NO_ERROR) {
+    free(fingerprint);
+    free(message);
+    return NULL;  
+  }
+
+  gpgme_data_t cipher;
+  gpgme_data_new(&cipher);
+  err = gpgme_op_encrypt(_context, recp, GPGME_ENCRYPT_ALWAYS_TRUST, message_data, cipher);
+  free(fingerprint);
+  free(message);
+  
+  if (err != GPG_ERR_NO_ERROR) {
+    gpgme_data_release(cipher);
+    return NULL;
+  }
+
+  gpgme_encrypt_result_t res = gpgme_op_encrypt_result(_context);
+  if (res->invalid_recipients != NULL) {
+    gpgme_data_release(cipher);
+    return NULL;
+  };
+
+  size_t nread;
+  char *data = gpgme_data_release_and_get_mem(cipher, &nread);
+  return data;
+}
+
+
+char *ContextWrapper::StringToCharPointer(Local<String> str) {
+
+  int nbytesWritten;
+  char *buffer;
+  int size = str->Utf8Length() + 1;
+  buffer = (char *) malloc((size) * sizeof(char));
+  if (buffer == NULL) {
+    Nan::ThrowError("Memory allocation failed");
+    return NULL;
+  }
+
+  str->WriteUtf8(buffer, size, &nbytesWritten, 0);
+  //TODO : Ensure that all bytes have been copied properly
+
+  return buffer;
 }
