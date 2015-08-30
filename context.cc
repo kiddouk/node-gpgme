@@ -5,7 +5,24 @@ using namespace v8;
 
 Nan::Persistent<Function> ContextWrapper::constructor;
 
-ContextWrapper::ContextWrapper() : _context(NULL) {
+ContextWrapper::ContextWrapper(Local<Object> conf) : _context(NULL) {
+
+  /* Fetch the configuration options or use defaults */
+  /* TODO: Should be refactored to a more usable multitype HashMap */
+  Local<v8::String> key = Nan::New("armored").ToLocalChecked();
+  bool armored = true;
+  if (conf->Has(key) && conf->Get(key)->IsBoolean()) {
+    armored = Nan::To<Boolean>(conf->Get(key)).ToLocalChecked()->Value();
+  }
+
+  key = Nan::New("keyring_path").ToLocalChecked();
+  Local<String> keyring_path;
+  if (conf->Has(key) && conf->Get(key)->IsString()) {
+    keyring_path = Nan::To<String>(conf->Get(key)).ToLocalChecked();
+  } else {
+    // TODO: Find the real TMP Directory for the plateform
+    keyring_path = Nan::New("/tmp").ToLocalChecked();
+  }
 
   /* The function `gpgme_check_version' must be called before any other
    * function in the library, because it initializes the thread support
@@ -20,25 +37,54 @@ ContextWrapper::ContextWrapper() : _context(NULL) {
 
   /* check for OpenPGP support */
   err = gpgme_engine_check_version(GPGME_PROTOCOL_OpenPGP);
-  // if(err != GPG_ERR_NO_ERROR) return err;
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("OpenGPG is not supported on your plateform.");
+    return;
+  }
 
   /* get engine information */
   err = gpgme_get_engine_info(&enginfo);
-  // if(err != GPG_ERR_NO_ERROR) return err;
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Cannot get the engine information");
+    return;
+  }
 
   /* create our own context */
   err = gpgme_new(&_context);
-  // if(err != GPG_ERR_NO_ERROR) return err;
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Cannot create gpgme context object");
+    return;
+  }
 
   /* set protocol to use in our context */
   err = gpgme_set_protocol(_context, GPGME_PROTOCOL_OpenPGP);
-  // if(err != GPG_ERR_NO_ERROR) return err;
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Cannot set protocol to OpenPGP");
+    return;
+  }
+
+  /* Allocated memory to get the value of the path option */
+  int nbytesWritten;
+  char *keyring_path_buffer;
+  keyring_path_buffer = (char *) malloc((keyring_path->Utf8Length() + 1) * sizeof(char));
+  if (keyring_path_buffer == NULL) {
+    Nan::ThrowError("Memory allocation failed");
+    return;
+  }
+
+  // TODO: Make this a complete do...while if the copy gets interrupted.
+  keyring_path->WriteUtf8(keyring_path_buffer, keyring_path->Utf8Length(), &nbytesWritten, 0);
 
   err = gpgme_ctx_set_engine_info (_context, GPGME_PROTOCOL_OpenPGP,
                                    enginfo->file_name,
-                                   "/tmp");
-  gpgme_set_armor(_context, 1);
-  
+                                   keyring_path_buffer);
+  if (err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Cannot set engine options, are you sure about the path for the keyring ?");
+    return;
+  }
+
+  gpgme_set_armor(_context, armored);
+  free(keyring_path_buffer);
 }
 
 ContextWrapper::~ContextWrapper() {
@@ -64,7 +110,11 @@ NAN_MODULE_INIT(ContextWrapper::Init) {
 NAN_METHOD(ContextWrapper::New) {
   if (info.IsConstructCall()) {
     // Invoked as constructor: `new MyObject(...)`
-    ContextWrapper *contextWrapper = new ContextWrapper();
+    if (info.Length() < 1) Nan::ThrowError("Argument missing");
+    Local<v8::Object> configuration = Nan::To<v8::Object>(info[0]).ToLocalChecked();
+
+    ContextWrapper *contextWrapper = new ContextWrapper(configuration);
+    
     contextWrapper->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
