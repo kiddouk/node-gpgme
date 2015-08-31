@@ -102,9 +102,13 @@ NAN_MODULE_INIT(ContextWrapper::Init) {
 
 NAN_METHOD(ContextWrapper::New) {
   if (info.IsConstructCall()) {
+    Local<v8::Object> configuration;
     // Invoked as constructor: `new MyObject(...)`
-    if (info.Length() < 1) Nan::ThrowError("Argument missing");
-    Local<v8::Object> configuration = Nan::To<v8::Object>(info[0]).ToLocalChecked();
+    if (info.Length() >= 1 && info[0]->IsObject()) {
+      configuration = Nan::To<v8::Object>(info[0]).ToLocalChecked();      
+    } else {
+      configuration = Nan::New<Object>();
+    }
 
     ContextWrapper *contextWrapper = new ContextWrapper(configuration);
     
