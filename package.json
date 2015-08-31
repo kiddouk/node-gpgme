@@ -3,6 +3,7 @@
   "name": "node-gpgme",
   "description": "GpgMe bindings",
   "version": "0.0.1",
+  "gypfile": true,
   "keywords": [
     "node-gyp",
     "gpg",
@@ -11,9 +12,6 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:kiddouk/node-gpgme.git"
-  },
-  "scripts": {
-    "install": "node-gyp configure; node-gyp build"
   },
   "engines": {
     "node": ">= 0.10.0"
