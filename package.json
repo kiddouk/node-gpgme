@@ -2,7 +2,7 @@
   "author": "Sebastien Requiem <sebastien.requiem@gmail.com>",
   "name": "node-gpgme",
   "description": "GpgMe bindings",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "gypfile": true,
   "main": "index.js",
   "keywords": [
