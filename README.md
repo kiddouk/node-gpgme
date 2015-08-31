@@ -73,19 +73,19 @@ var cipher = gpgme.cipher(fingerprint, message);
 ```
 
 ```
-'-----BEGIN PGP MESSAGE-----\
-Version: GnuPG v2\
-\
-hQEMA7xBZ+vX1VJHAQf/QpzEn8jwgWcuEgP/kF+NoihSOz5PDQbrf52EgykSajF4\
-XipaoqnceMrZpwkWTF9yZGcvCyMAX0pgiKNlThHloHsLkTjjq3L6/KFWk0odpG+C\
-UMer5X6yQsIjLsYGcWU2W8Qb6x4giX/v/yL4DGy6TYRb9tKf4r+0i2BD/1PrB2eN\
-qXhz6RFmbZg4qWjozyg2CYo5Bz2HDmF/mciRnejP/THCGKKmbf45LAZsS37Y07d6\
-cb35+YG0anwU/qZHDnrDsqlHTQ7+rdJui6KXobJpikAa873mziaqunDykl7Fve3l\
-26SzxiWhvgxk2+mhIW+syobFalLZCI40+ryAHvumhNJDATMw3MfGeZnBnRYZu+Ay\
-9EXXFCVn9A86Gli2B5gyYVk8kbAadfXAd8Vj+ysPw0in/HGoUH/NTDUp/C/SN4Nl\
-L4KxYQ==\
-=ACDC\
------END PGP MESSAGE-----'
+-----BEGIN PGP MESSAGE-----
+Version: GnuPG v2
+
+hQEMA7xBZ+vX1VJHAQf/QpzEn8jwgWcuEgP/kF+NoihSOz5PDQbrf52EgykSajF4
+XipaoqnceMrZpwkWTF9yZGcvCyMAX0pgiKNlThHloHsLkTjjq3L6/KFWk0odpG+C
+UMer5X6yQsIjLsYGcWU2W8Qb6x4giX/v/yL4DGy6TYRb9tKf4r+0i2BD/1PrB2eN
+qXhz6RFmbZg4qWjozyg2CYo5Bz2HDmF/mciRnejP/THCGKKmbf45LAZsS37Y07d6
+cb35+YG0anwU/qZHDnrDsqlHTQ7+rdJui6KXobJpikAa873mziaqunDykl7Fve3l
+26SzxiWhvgxk2+mhIW+syobFalLZCI40+ryAHvumhNJDATMw3MfGeZnBnRYZu+Ay
+9EXXFCVn9A86Gli2B5gyYVk8kbAadfXAd8Vj+ysPw0in/HGoUH/NTDUp/C/SN4Nl
+L4KxYQ==
+=ACDC
+-----END PGP MESSAGE-----
 ```
 
 
