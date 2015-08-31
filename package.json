@@ -21,5 +21,10 @@
     "bindings": "^1.2.1",
     "nan": "^2.0.8",
     "node-gyp": ">= 0.9.6"
-  }
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kiddouk/node-gpgme/issues"
+  },
+  "homepage": "https://github.com/kiddouk/node-gpgme"
 }
