@@ -1,3 +1,3 @@
 var bindings = require("bindings")("gpgme.node")
 
-module.exports = bindings
+module.exports = bindings.GpgMeContext;

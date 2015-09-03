@@ -2,8 +2,8 @@
     "targets": [
         {
             "target_name": "gpgme",
-            "sources": [ "addon.cc",
-                         "context.cc",
+            "sources": [ "src/addon.cc",
+                         "src/context.cc",
                          ],
             "include_dirs": [
                 "<!(node -e \"require('nan')\")",

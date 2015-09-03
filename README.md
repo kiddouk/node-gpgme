@@ -101,3 +101,15 @@ As this is a very early release coded in few days only, I tried my best to deall
 2. Use libuv for asynchronous ciphering
 3. Unit tests should be written both in JS and C++
 4. Use key pattern for key a faster key retrieving
+
+
+
+## Changelog ##
+v0.0.5
+------
+* Change the attribute GpgMeContext to exports object (sorry folks)
+
+v0.0.4
+------
+* Fix #1
+* First version tracked by changelog
