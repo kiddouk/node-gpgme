@@ -5,6 +5,9 @@
   "version": "0.0.4",
   "gypfile": true,
   "main": "index.js",
+  "scripts": {
+    "test": "standard && tape test/*.js"
+  },
   "keywords": [
     "node-gyp",
     "gpg",
