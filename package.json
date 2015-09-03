@@ -26,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/kiddouk/node-gpgme/issues"
   },
-  "homepage": "https://github.com/kiddouk/node-gpgme"
+  "homepage": "https://github.com/kiddouk/node-gpgme",
+  "devDependencies": {
+    "tape": "^4.2.0"
+  }
 }
