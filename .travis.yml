@@ -2,7 +2,7 @@ language: node_js
 
 before_install:
  - sudo apt-get update -qq
- - sudo apt-get install -y libgpgme11-dev glibc-devel
+ - sudo apt-get install -y libgpgme11-dev linux-libc-dev
     
 node_js:
  - "0.12"
