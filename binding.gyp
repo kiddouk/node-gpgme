@@ -11,11 +11,8 @@
             ],
             "link_settings": {
                 "libraries": [
-                    "<!@(gpgme-config --libs | sed 's/-L[A-Za-z0-9\.\/\-]*[:blank:]*//g')"
                 ],
                 "library_dirs": [
-                   "<!@(gpgme-config --libs | sed 's/-l[a-z\-]*[:blank:]*//g' | sed 's/-L//g')"
-
                 ]    
  
             }
