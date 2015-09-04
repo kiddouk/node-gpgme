@@ -6,7 +6,7 @@
   "gypfile": true,
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape tests/*.js"
   },
   "keywords": [
     "node-gyp",
