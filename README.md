@@ -1,5 +1,7 @@
 # Node-Gpgme
 
+![travis](https://travis-ci.org/kiddouk/node-gpgme.svg?branch=master)
+
 This module gives you access to GpgMe librairy and its underlying GPG backend. With this module, you can :
 
 * Add and remove key to your keyring
@@ -107,6 +109,7 @@ As this is a very early release coded in few days only, I tried my best to deall
 ## Changelog ##
 v0.0.5
 ------
+* Add travis-ci integration
 * Change the attribute GpgMeContext to exports object (sorry folks)
 
 v0.0.4
