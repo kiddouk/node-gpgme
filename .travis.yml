@@ -1,9 +1,19 @@
+sudo: false
+
 language: node_js
 
-before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -y libgpgme11-dev build-essential
-    
+
+env:
+  - CXX=g++-4.8
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - libgpgme11
+
 node_js:
  - "0.12"
 
