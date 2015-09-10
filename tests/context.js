@@ -1,5 +1,5 @@
-var test = require("tape");
-var GpgMe = require("..");
+var test = require('tape');
+var GpgMe = require('..');
 
 test('import_keys', function (t) {
     t.plan(2);
@@ -44,7 +44,7 @@ oezv1L1SiuNonPtwiYcbphGo\n\
     import_fingerprint = gpgme.importKey(ascii_key);
     t.equal(fingerprint, import_fingerprint);
 
-    ascii_key = "This is not a key";
+    ascii_key = 'This is not a key';
     import_fingerprint = gpgme.importKey(ascii_key);
     t.equal(false, import_fingerprint);
 
@@ -56,7 +56,7 @@ test('list_keys', function (t) {
     var keys,
         gpgme,
         fingerprint = '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC',
-        email = "sebastien@requiem.fr";
+        email = 'sebastien@requiem.fr';
 
     gpgme = new GpgMe();
     keys = gpgme.listKeys();
@@ -68,8 +68,7 @@ test('list_keys', function (t) {
 test('cipher', function (t) {
     t.plan(2);
     
-    var keys,
-        gpgme,
+    var gpgme,
         fingerprint = '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC',
         payload = 'Can you read this ?',
         needle = '-----BEGIN PGP MESSAGE-----',
