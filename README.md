@@ -1,7 +1,4 @@
-# Node-Gpgme
-
-![travis](https://travis-ci.org/kiddouk/node-gpgme.svg?branch=master)
-
+# node-gpgme ![travis](https://travis-ci.org/kiddouk/node-gpgme.svg?branch=master)
 This module gives you access to GpgMe librairy and its underlying GPG backend. With this module, you can :
 
 * Add and remove key to your keyring
@@ -13,18 +10,24 @@ This module is aiming at (finally!) give access to gpg key manipulation for node
 
 * using promises for callbacks
 * handling multiple "gpg context" (see the context as a session. One session could output everything in ASCII, while the other one can output everything in binary, or 2 sessions could use a different keyring if you want to).
-* 
 
-## Installation ##
+## Requirements
 
-Simply run `npm install node-gpgme`
-Make sure that you have libgpgme installed on your system. `brew install gpgme` or on debian `apt-get intsall libgpgme11`
+* node-gyp
+  * npm install node-gyp -g
+* libgpgme11
+  * linux: `apt-get install libgpgme11 libgpgme11-dev`
+  * osx: `brew install gpgme`
 
-## Configuration ##
+## Installation
+
+Simply run `npm install node-gpgme`. Make sure you have the requirements installed correctly.
+
+## Configuration
 
 The configuration objects allows you to specify the path of the keyring to use, if armored is to be used and the backend engine you want to use (so far, we only support OpenPGP).
 
-```javascript
+```js
 var GpgMe = require('gpgme')
 var gpgme = new GpgMe({armored: true, keyring_path: '/tmp'});
 ```
@@ -34,8 +37,7 @@ var gpgme = new GpgMe({armored: true, keyring_path: '/tmp'});
 So far, you can only add a key (public or secret) and list those keys. Simple.
 
 1. Adding a key
-
-```javascript
+```js
 var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
 var fingerprint = gpgme.importKey(s)
 if (fingerprint === false) {
@@ -44,15 +46,14 @@ if (fingerprint === false) {
   console.log("Key fingerprint :" + fingerprint); 
 }
 ```
-
 2. Listing keys
 
-```javascript
+```js
 var keys = gpgme.listKeys();
 console.log(keys[0]);
 ```
 
-```javascript
+```js
 { fingerprint: '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC',
     email: 'sebastien@requiem.fr',
     name: 'Sebastien Requiem',
@@ -64,11 +65,10 @@ console.log(keys[0]);
     secret: false }
 ```
 
-
 ## Ciphering a message ##
 You can cipher a message to *one* recipient at a time for the moment bu using the fingerprint of the key previously retrieved.
 
-```javascript
+```js
 var fingerprint = '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC';
 var message = "Can you read this ?";
 var cipher = gpgme.cipher(fingerprint, message);
@@ -92,13 +92,13 @@ L4KxYQ==
 
 
 
-## Limitations ##
+## Limitations
 So far, this module not respecting the nature of node when fetching keys or encrypting large payload. If you have 1000 keys in your keyring, except things to block long enough to be noticed. Same goes for large messages to cipher.
 
 As this is a very early release coded in few days only, I tried my best to deallocate memory blocks when possible but expect this module to leak for now.
 
 
-## TODO ##
+## TODO
 1. Use libuv for asynchronous keyfetching
 2. Use libuv for asynchronous ciphering
 3. Unit tests should be written both in JS and C++
@@ -106,7 +106,7 @@ As this is a very early release coded in few days only, I tried my best to deall
 
 
 
-## Changelog ##
+## Changelog
 v0.0.5
 ------
 * Add travis-ci integration
