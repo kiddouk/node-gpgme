@@ -14,7 +14,7 @@ This module is aiming at (finally!) give access to gpg key manipulation for node
 ## Requirements
 
 * node-gyp
-  * npm install node-gyp -g
+  * `npm install node-gyp -g`
 * libgpgme11
   * linux: `apt-get install libgpgme11 libgpgme11-dev`
   * osx: `brew install gpgme`
@@ -37,33 +37,32 @@ var gpgme = new GpgMe({armored: true, keyring_path: '/tmp'});
 So far, you can only add a key (public or secret) and list those keys. Simple.
 
 1. Adding a key
-```js
-var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
-var fingerprint = gpgme.importKey(s)
-if (fingerprint === false) {
-  console.log("Couldn't import key.")
-} else {
-  console.log("Key fingerprint :" + fingerprint); 
-}
-```
+  ```js
+  var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
+  var fingerprint = gpgme.importKey(s)
+  if (fingerprint === false) {
+    console.log("Couldn't import key.")
+  } else {
+    console.log("Key fingerprint :" + fingerprint); 
+  }
+  ```
 2. Listing keys
+  ```js
+  var keys = gpgme.listKeys();
+  console.log(keys[0]);
+  ```
 
-```js
-var keys = gpgme.listKeys();
-console.log(keys[0]);
-```
-
-```js
-{ fingerprint: '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC',
-    email: 'sebastien@requiem.fr',
-    name: 'Sebastien Requiem',
-    revoked: false,
-    expired: false,
-    disabled: false,
-    invalid: false,
-    can_encrypt: true,
-    secret: false }
-```
+  ```js
+  { fingerprint: '3B2302E57CC7AA3D8D4600E89DAC32BD82A1C9DC',
+      email: 'sebastien@requiem.fr',
+      name: 'Sebastien Requiem',
+      revoked: false,
+      expired: false,
+      disabled: false,
+      invalid: false,
+      can_encrypt: true,
+      secret: false }
+  ```
 
 ## Ciphering a message ##
 You can cipher a message to *one* recipient at a time for the moment bu using the fingerprint of the key previously retrieved.
