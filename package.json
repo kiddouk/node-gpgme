@@ -1,5 +1,9 @@
 {
   "author": "Sebastien Requiem <sebastien.requiem@gmail.com>",
+  "contributors": [
+    { "name": "Gabriel Pedro",
+      "email": "contato@gpedro.net" }
+  ],
   "name": "node-gpgme",
   "description": "GpgMe bindings",
   "version": "0.0.5",
