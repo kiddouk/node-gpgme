@@ -1,4 +1,4 @@
-# node-gpgme ![travis](https://travis-ci.org/kiddouk/node-gpgme.svg?branch=master)
+# node-gpgme [![Build Status](https://travis-ci.org/kiddouk/node-gpgme.svg?branch=master)](https://travis-ci.org/kiddouk/node-gpgme)
 This module gives you access to GpgMe librairy and its underlying GPG backend. With this module, you can :
 
 * Add and remove key to your keyring
