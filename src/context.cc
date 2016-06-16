@@ -318,7 +318,11 @@ char *ContextWrapper::cipherPayload(Local<String> fpr, Local<String> msg) {
 
   size_t nread;
   char *data = gpgme_data_release_and_get_mem(cipher, &nread);
-  return data;
+  char *encrypted_message = (char *) malloc((nread + 1) * sizeof(char));
+  memset(encrypted_message, 0, nread);
+  memcpy(encrypted_message, data, nread);
+  gpgme_free(data);
+  return encrypted_message;
 }
 
 
