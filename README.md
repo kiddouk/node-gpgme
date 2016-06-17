@@ -37,15 +37,15 @@ var gpgme = new GpgMe({armored: true, keyring_path: '/tmp'});
 So far, you can only add a key (public or secret) and list those keys. Simple.
 
 1. Adding a key
-  ```js
-  var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
-  var fingerprint = gpgme.importKey(s)
-  if (fingerprint === false) {
-    console.log("Couldn't import key.")
-  } else {
-    console.log("Key fingerprint :" + fingerprint); 
-  }
-  ```
+
+    var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
+    var fingerprint = gpgme.importKey(s)
+    if (fingerprint === false) {
+      console.log("Couldn't import key.")
+    } else {
+      console.log("Key fingerprint :" + fingerprint); 
+    }
+
 2. Listing keys
   ```js
   var keys = gpgme.listKeys();
@@ -106,6 +106,11 @@ As this is a very early release coded in few days only, I tried my best to deall
 
 
 ## Changelog
+v0.0.6
+------
+* Fix an issue with a non inistialized memory allocated buffer for
+encrypted payloads
+
 v0.0.5
 ------
 * Add travis-ci integration
