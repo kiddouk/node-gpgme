@@ -5,6 +5,29 @@ using namespace v8;
 
 Nan::Persistent<Function> ContextWrapper::constructor;
 
+static gpgme_error_t passphrase_cb (void *opaque, const char *uid_hint, const char *passphrase_info, int last_was_bad, int fd) {
+  int res;
+  char pass[255];
+
+  strcpy(pass, (const char *)opaque);
+  int passlen = strlen (pass);
+  pass[passlen] = '\n';
+  pass[passlen+1] = 0;
+  passlen += 1;
+  int off = 0;
+
+  do {
+      res = write (fd, &pass[off], passlen - off);
+      if (res > 0)
+        off += res;
+  }
+  while (res > 0 && off != passlen);
+
+  return off == passlen ? 0 : gpgme_error_from_errno (errno);
+
+  return 0;
+}
+
 ContextWrapper::ContextWrapper(Local<Object> conf) : _context(NULL) {
 
   /* Fetch the configuration options or use defaults */
@@ -76,6 +99,7 @@ ContextWrapper::ContextWrapper(Local<Object> conf) : _context(NULL) {
     return;
   }
   gpgme_set_armor(_context, armored);
+  gpgme_set_pinentry_mode(_context, GPGME_PINENTRY_MODE_LOOPBACK);
 }
 
 ContextWrapper::~ContextWrapper() {
@@ -93,7 +117,8 @@ NAN_MODULE_INIT(ContextWrapper::Init) {
   SetPrototypeMethod(tpl, "toString", toString);
   SetPrototypeMethod(tpl, "importKey", importKey);
   SetPrototypeMethod(tpl, "listKeys", listKeys);
-  SetPrototypeMethod(tpl, "cipher", cipher);  
+  SetPrototypeMethod(tpl, "cipher", cipher);
+  SetPrototypeMethod(tpl, "sign", sign);
 
   constructor.Reset(tpl->GetFunction());
   Nan::Set(target, Nan::New("GpgMeContext").ToLocalChecked(), tpl->GetFunction());
@@ -105,13 +130,13 @@ NAN_METHOD(ContextWrapper::New) {
     Local<v8::Object> configuration;
     // Invoked as constructor: `new MyObject(...)`
     if (info.Length() >= 1 && info[0]->IsObject()) {
-      configuration = Nan::To<v8::Object>(info[0]).ToLocalChecked();      
+      configuration = Nan::To<v8::Object>(info[0]).ToLocalChecked();
     } else {
       configuration = Nan::New<Object>();
     }
 
     ContextWrapper *contextWrapper = new ContextWrapper(configuration);
-    
+
     contextWrapper->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
@@ -174,6 +199,32 @@ NAN_METHOD(ContextWrapper::cipher) {
 }
 
 
+NAN_METHOD(ContextWrapper::sign) {
+  ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
+  //arg0 should be the finger print of the key to use
+  //arg1 should be the payload to sign
+  //arg2 should be the password for the key
+
+  if (info.Length() != 3) Nan::ThrowError("Missing argument (fingerprint, message, password)");
+  if (!info[0]->IsString()) Nan::ThrowError("fingerprint should be a string");
+  if (!info[1]->IsString()) Nan::ThrowError("message should be a string");
+  if (!info[2]->IsString()) Nan::ThrowError("password should be a string");
+
+  Local<String> fingerprint = Nan::To<String>(info[0]).ToLocalChecked();
+  Local<String> message = Nan::To<String>(info[1]).ToLocalChecked();
+  Local<String> password = Nan::To<String>(info[2]).ToLocalChecked();
+
+  char *data = context->signPayload(fingerprint, message, password);
+  if (data == NULL) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
+
+  info.GetReturnValue().Set(Nan::New<v8::String>(data).ToLocalChecked());
+  gpgme_free(data);
+}
+
+
 
 NAN_METHOD(ContextWrapper::listKeys) {
   ContextWrapper* context = ObjectWrap::Unwrap<ContextWrapper>(info.This());
@@ -185,7 +236,7 @@ NAN_METHOD(ContextWrapper::listKeys) {
     Nan::ThrowError("Internal error when retrieving the keys");
     return;
   }
-  
+
   Local<Array> v8Keys= Nan::New<Array>();
   std::list<gpgme_key_t>::const_iterator iterator;
   int i;
@@ -216,11 +267,11 @@ NAN_METHOD(ContextWrapper::listKeys) {
     v8Keys->Set(i, v8Key);
 
     v8Key->Set(Nan::New("secret").ToLocalChecked(), (*iterator)->secret ? Nan::True() : Nan::False());
-    
+
     v8Keys->Set(i, v8Key);
     gpgme_key_unref((*iterator));
   }
-  
+
   info.GetReturnValue().Set(v8Keys);
 }
 
@@ -235,7 +286,7 @@ char* ContextWrapper::getVersion() {
 }
 
 
-bool ContextWrapper::addKey(char *key, int length,  std::string& fingerprint) {  
+bool ContextWrapper::addKey(char *key, int length,  std::string& fingerprint) {
   gpgme_data_t gpgme_key_data;
   gpgme_error_t err;
 
@@ -267,7 +318,7 @@ bool ContextWrapper::getKeys(std::list<gpgme_key_t> *keys) {
   do {
     err = gpgme_op_keylist_next(_context, &key);
     if (err) break;
-    keys->insert(keys->end(), key);    
+    keys->insert(keys->end(), key);
   } while (err == GPG_ERR_NO_ERROR);
   if (gpg_err_code (err) != GPG_ERR_EOF) {
     std::cout << "FAIL\n";
@@ -275,6 +326,73 @@ bool ContextWrapper::getKeys(std::list<gpgme_key_t> *keys) {
     return false;
   }
   return true;
+}
+
+char *ContextWrapper::signPayload(v8::Local<v8::String> fpr, v8::Local<v8::String> msg, v8::Local<v8::String> passphrase) {
+  gpgme_error_t err;
+  gpgme_key_t recp = NULL;
+  char *fingerprint = StringToCharPointer(fpr);
+  char *message = StringToCharPointer(msg);
+  char *pass = StringToCharPointer(passphrase);
+
+  gpgme_set_passphrase_cb (_context, passphrase_cb, pass);
+
+  err = gpgme_get_key(_context, fingerprint, &recp, 1);
+  if(err != GPG_ERR_NO_ERROR) {
+    free(fingerprint);
+    free(message);
+    free(pass);
+    Nan::ThrowError("Error loading private key.");
+    return NULL;
+  }
+
+  gpgme_signers_clear(_context);
+  err = gpgme_signers_add (_context, recp);
+  gpgme_key_unref (recp);
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Error adding key to signer list");
+    free(fingerprint);
+    free(message);
+    free(pass);
+    return NULL;
+  }
+
+  gpgme_data_t message_data;
+  err = gpgme_data_new_from_mem(&message_data, message, msg->Length(), 0);
+  if(err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Error allocating buffer for message");
+    free(fingerprint);
+    free(message);
+    free(pass);
+    return NULL;
+  }
+
+  gpgme_data_t signer;
+  gpgme_data_new(&signer);
+  err = gpgme_op_sign(_context, message_data, signer, GPGME_SIG_MODE_NORMAL);
+  free(fingerprint);
+  free(message);
+  free(pass);
+
+  if (err != GPG_ERR_NO_ERROR) {
+    Nan::ThrowError("Error signing message. If GPG2 check if allow-pinentry-loopback is enabled in agent or use gpg-preset-passphrase");
+    gpgme_data_release(signer);
+    return NULL;
+  }
+
+  gpgme_sign_result_t res = gpgme_op_sign_result(_context);
+  if (!res->signatures) {
+    gpgme_data_release(signer);
+    return NULL;
+  };
+
+  size_t nread;
+  char *data = gpgme_data_release_and_get_mem(signer, &nread);
+  char *encrypted_message = (char *) malloc((nread + 1) * sizeof(char));
+  memset(encrypted_message, 0, nread);
+  memcpy(encrypted_message, data, nread);
+  gpgme_free(data);
+  return encrypted_message;
 }
 
 char *ContextWrapper::cipherPayload(Local<String> fpr, Local<String> msg) {
@@ -296,15 +414,16 @@ char *ContextWrapper::cipherPayload(Local<String> fpr, Local<String> msg) {
   if(err != GPG_ERR_NO_ERROR) {
     free(fingerprint);
     free(message);
-    return NULL;  
+    return NULL;
   }
 
   gpgme_data_t cipher;
   gpgme_data_new(&cipher);
   err = gpgme_op_encrypt(_context, recp, GPGME_ENCRYPT_ALWAYS_TRUST, message_data, cipher);
+  gpgme_key_unref (recp[0]);
   free(fingerprint);
   free(message);
-  
+
   if (err != GPG_ERR_NO_ERROR) {
     gpgme_data_release(cipher);
     return NULL;
