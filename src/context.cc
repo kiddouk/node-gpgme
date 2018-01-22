@@ -1,6 +1,7 @@
 #include <locale.h>  /* locale support    */
 #include "context.h"
 #include <iostream>
+#include <unistd.h>
 using namespace v8;
 
 Nan::Persistent<Function> ContextWrapper::constructor;
