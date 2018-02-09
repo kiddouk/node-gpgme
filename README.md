@@ -38,6 +38,7 @@ So far, you can only add a key (public or secret) and list those keys. Simple.
 
 1. Adding a key
 
+```js
     var s = "-----BEGIN PGP PUBLIC KEY BLOCK ..."
     var fingerprint = gpgme.importKey(s)
     if (fingerprint === false) {
@@ -45,6 +46,7 @@ So far, you can only add a key (public or secret) and list those keys. Simple.
     } else {
       console.log("Key fingerprint :" + fingerprint); 
     }
+```
 
 2. Listing keys
   ```js
