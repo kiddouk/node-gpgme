@@ -10,7 +10,14 @@ static gpgme_error_t passphrase_cb (void *opaque, const char *uid_hint, const ch
   int res;
   char pass[255];
 
-  strcpy(pass, (const char *)opaque);
+  int inputLen = strlen((const char*) opaque);
+
+  if (inputLen >= 255) {
+    // Avoid Buffer Overflow
+    inputLen = 254;
+  }
+
+  memcpy(pass, (const char *)opaque, inputLen);
   int passlen = strlen (pass);
   pass[passlen] = '\n';
   pass[passlen+1] = 0;
